@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script>
+        function buttonOnClick() {
+            const accountName = parent.Xrm.Page.getAttribute('name').getValue()
+            document.getElementById("text").innerHTML = accountName
+        }
+
+        function createRecord() {
+            const newContact = {
+                'firstname': 'Sample contact',
+                'lastname': 'Web API',
+            }
+            parent.Xrm.WebApi.createRecord('contact', newContact).then(
+                res => {
+                    console.log(`Account created with id: ${res.id}`)
+                    document.getElementById("record").innerHTML = res.id
+                },
+                error => {
+                    console.log(error.message)
+                    document.getElementById("record").innerHTML = error.message
+                }
+            )
+            parent.Xrm.WebApi.retrieveMultipleRecords('contact',
+                `?$select=firstname,lastname&$filter=address1_city eq 'Redmond'`, 5000)
+                .then(
+                res => {
+                    let searchText
+                    for (let i = 0; i < res.entities.length; i++) {
+                        searchText += res.entities[i].firstname
+                    }
+                    document.getElementById("search").innerHTML = searchText
+                },
+                error => {
+                    console.log(error.message)
+                }
+            )
+        }
+    </script>
+</head>
+<body>
+<input type="button" value="Click Me" onclick="buttonOnClick()"/>
+<p id="text"></p>
+<button onclick="createRecord()">Create record</button>
+<p id="record"></p>
+<p id="search"></p>
+</body>
+</html>
