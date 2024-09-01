@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Birthday congratulation</title>
+    <style>
+        .progress {
+            width: 100%;
+            background-color: #f1f1f1;
+        }
+
+        .bar {
+            width: 0;
+            height: 30px;
+            background-color: #4caf50;
+            text-align: center;
+            line-height: 30px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+<input type="date" id="minBirthday" min="2024-09-01" value="2024-09-01">
+<input type="date" id="maxBirthday" min="2024-09-01" value="2024-09-01">
+<button onclick="startButton()">Start</button>
+<button>Cancel</button>
+
+<div class="progress">
+    <div class="bar" id="progressBar">0%</div>
+</div>
+<button onclick="moveProgressBar()">Start Progress</button>
+<p>Processed contacts X from Y</p>
+</body>
+
+<script>
+    //min date
+    const minDate = new Date().toISOString().split('T')[0]
+    const inputMinDate = document.getElementById('minBirthday')
+    inputMinDate.min = minDate
+
+    //max date
+    const maxDate = new Date().toISOString().split('T')[0]
+    const inputMaxDate = document.getElementById('maxBirthday')
+    inputMaxDate.min = maxDate
+
+    const startButton =()=> {
+        const minInputValue = new Date(document.getElementById('minBirthday').value)
+        const maxInputValue = new Date(document.getElementById('maxBirthday').value)
+        const sevenDaysLater = new Date()
+        sevenDaysLater.setDate(sevenDaysLater.getDate() + 7)
+
+        if (minInputValue > maxInputValue) {
+            console.log('min value shouldnt be more than max')
+        } else if (maxInputValue > sevenDaysLater) {
+            console.log('max value shouldnt be more than 7 days')
+        } else {
+            const startDateString = minInputValue.toISOString().slice(0, 10)
+            const endDateString = maxInputValue.toISOString().slice(0, 10)
+            console.log(startDateString, endDateString)
+            const filter = `birthdate ge ${startDateString} and birthdate le ${endDateString}`
+            parent.Xrm.WebApi.retrieveMultipleRecords("contact", `?$select=fullname&$filter=${filter}`, 3).then(
+                function success(result) {
+                    for (var i = 0; i < result.entities.length; i++) {
+                        console.log(result.entities[i]);
+                    }
+                    // perform additional operations on retrieved records
+                },
+                function (error) {
+                    console.log(error.message);
+                    // handle error conditions
+                }
+            )
+        }
+    }
+
+    const moveProgressBar =()=> {
+        const elem = document.getElementById("progressBar");
+        let width = 0;
+        const id = setInterval(frame, 10);
+        function frame() {
+            if (width >= 100) {
+                clearInterval(id);
+            } else {
+                width++;
+                elem.style.width = width + "%";
+                elem.innerHTML = width + "%";
+            }
+        }
+    }
+</script>
+</html>

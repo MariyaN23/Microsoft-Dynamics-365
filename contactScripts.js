@@ -52,7 +52,7 @@ var contactsScript = window.Sdk || {};
                 Email.send({
                     Host : "smtp.elasticemail.com",
                     Username : "sellaite505@gmail.com",
-                    Password : "",
+                    Password : "780A6E10DC3187E084E5BAFDCB85B66F2AAF",
                     To : myEmail,
                     From : "sellaite505@gmail.com",
                     Subject : "Happy Birthday!",
