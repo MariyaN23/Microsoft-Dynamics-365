@@ -20,8 +20,8 @@
     </style>
 </head>
 <body>
-<input type="date" id="minBirthday" min="2024-09-01" value="2024-09-01">
-<input type="date" id="maxBirthday" min="2024-09-01" value="2024-09-01">
+<input type="date" id="minBirthday">
+<input type="date" id="maxBirthday">
 <button onclick="startButton()">Start</button>
 <button>Cancel</button>
 
@@ -43,6 +43,8 @@
     const inputMaxDate = document.getElementById('maxBirthday')
     inputMaxDate.min = maxDate
 
+    var Email = { send: function (a) { return new Promise(function (n, e) { a.nocache = Math.floor(1e6 * Math.random() + 1), a.Action = "Send"; var t = JSON.stringify(a); Email.ajaxPost("https://smtpjs.com/v3/smtpjs.aspx?", t, function (e) { n(e) }) }) }, ajaxPost: function (e, n, t) { var a = Email.createCORSRequest("POST", e); a.setRequestHeader("Content-type", "application/x-www-form-urlencoded"), a.onload = function () { var e = a.responseText; null != t && t(e) }, a.send(n) }, ajax: function (e, n) { var t = Email.createCORSRequest("GET", e); t.onload = function () { var e = t.responseText; null != n && n(e) }, t.send() }, createCORSRequest: function (e, n) { var t = new XMLHttpRequest; return "withCredentials" in t ? t.open(e, n, !0) : "undefined" != typeof XDomainRequest ? (t = new XDomainRequest).open(e, n) : t = null, t } }
+
     const startButton =()=> {
         const minInputValue = new Date(document.getElementById('minBirthday').value)
         const maxInputValue = new Date(document.getElementById('maxBirthday').value)
@@ -58,33 +60,42 @@
             const endDateString = maxInputValue.toISOString().slice(0, 10)
             console.log(startDateString, endDateString)
             const filter = `birthdate ge ${startDateString} and birthdate le ${endDateString}`
-            parent.Xrm.WebApi.retrieveMultipleRecords("contact", `?$select=fullname&$filter=${filter}`, 3).then(
+            parent.Xrm.WebApi.retrieveMultipleRecords("contact", `?$select=fullname,emailaddress1&$filter=${filter}`).then(
                 function success(result) {
-                    for (var i = 0; i < result.entities.length; i++) {
-                        console.log(result.entities[i]);
-                    }
-                    // perform additional operations on retrieved records
+                    const total = result.entities.length;
+                    let processed = 0;
+                    const progressBar = document.getElementById("progressBar")
+
+                    result.entities.forEach(function(contact) {
+                        const emailAddress = contact.emailaddress1
+
+                        Email.send({
+                            Host: "smtp.elasticemail.com",
+                            Username: "sellaite505@gmail.com",
+                            Password: "780A6E10DC3187E084E5BAFDCB85B66F2AAF",
+                            To: emailAddress,
+                            From: "sellaite505@gmail.com",
+                            Subject: "Happy Birthday!",
+                            Body: "Happy birthday! I hope all your birthday wishes and dreams come true."
+                        }).then(
+                            message => {
+                                processed++;
+                                const progress = Math.round((processed / total) * 100);
+                                progressBar.style.width = progress + "%"
+                                progressBar.innerHTML = progress + "%";
+
+                                if (processed === total) {
+                                    alert("All emails sent successfully!")
+                                }
+                            }
+                        );
+                    });
                 },
                 function (error) {
                     console.log(error.message);
                     // handle error conditions
                 }
-            )
-        }
-    }
-
-    const moveProgressBar =()=> {
-        const elem = document.getElementById("progressBar");
-        let width = 0;
-        const id = setInterval(frame, 10);
-        function frame() {
-            if (width >= 100) {
-                clearInterval(id);
-            } else {
-                width++;
-                elem.style.width = width + "%";
-                elem.innerHTML = width + "%";
-            }
+            );
         }
     }
 </script>
