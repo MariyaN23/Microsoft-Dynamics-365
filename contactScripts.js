@@ -47,7 +47,11 @@ var contactsScript = window.Sdk || {};
 
             const contactBirthday = new Date(birthdate)
             const compareDate = new Date()
-            if (contactBirthday.getDate() === compareDate.getDate() && contactBirthday.getMonth() === compareDate.getMonth()) {
+
+            const isEmailSentToUser = formContext.getAttribute('test_last_birthday_congrat').getValue()
+            console.log(isEmailSentToUser)
+
+            if (contactBirthday.getDate() === compareDate.getDate() && contactBirthday.getMonth() === compareDate.getMonth() && !isEmailSentToUser) {
                 const myEmail = formContext.getAttribute('emailaddress1').getValue()
                 Email.send({
                     Host : "smtp.elasticemail.com",
@@ -58,7 +62,13 @@ var contactsScript = window.Sdk || {};
                     Subject : "Happy Birthday!",
                     Body : "Happy birthday! I hope all your birthday wishes and dreams come true."
                 }).then(
-                    message => alert(message)
+                    message => {
+                        alert(message)
+                        if (message === 'OK') {
+                            formContext.getAttribute('test_last_birthday_congrat').setValue(true)
+                            formContext.data.entity.save()
+                        }
+                    }
                 )
             }
         }

@@ -88,10 +88,14 @@
 
     let processed = 0
     let errorSendingEmail = 0
+    let all
+    let alreadySentEmail = 0
     const startButton = () => {
         stopProcessing = false
         processed = 0
         errorSendingEmail = 0
+        all = 0
+        alreadySentEmail = 0
 
         const progressBar = document.getElementById("progressBar")
         const processedDiv = document.getElementById("processedDiv")
@@ -119,7 +123,7 @@
             const startDateString = minInputValue.toISOString().slice(0, 10)
             const endDateString = maxInputValue.toISOString().slice(0, 10)
             const filter = `birthdate ge ${startDateString} and birthdate le ${endDateString}`
-            parent.Xrm.WebApi.retrieveMultipleRecords("contact", `?$select=fullname,emailaddress1,test_last_birthday_congrat&$filter=${filter}`).then(
+            parent.Xrm.WebApi.retrieveMultipleRecords("contact", `?$select=fullname,emailaddress1,test_last_birthday_congrat,contactid&$filter=${filter}`).then(
                 function success(result) {
                     const total = result.entities.length
 
@@ -149,33 +153,45 @@
                                 message => {
                                     if (message === 'OK') {
                                         processed++
-
-                                        var contact = window.Sdk || {}
-                                        (function () {
-                                            this.setEmailSent = function (executionContext) {
-                                                const formContext = executionContext.getFormContext()
-                                                const dateOfLastCongratulation = formContext.getAttribute('test_last_birthday_congrat').setValue(true)
+                                        parent.Xrm.WebApi.updateRecord("contact", contact.contactid, { test_last_birthday_congrat: true }).then(
+                                            function success(result) {
+                                                console.log("Field updated successfully")
+                                            },
+                                            function(error) {
+                                                console.log(error.message)
                                             }
-                                        }).call(contact)
-                                        setEmailSent(executionContext)
-
+                                        )
                                     } else {
                                         errorSendingEmail++
                                     }
-                                    const all = processed + errorSendingEmail
-                                    processedDiv.innerText = `Processed contacts ${processed} from ${total}, error ${errorSendingEmail}`
+                                    all = processed + errorSendingEmail + alreadySentEmail
+                                    processedDiv.innerText = `Processed contacts ${processed} from ${total}, error ${errorSendingEmail}, already sent ${alreadySentEmail}`
                                     const progress = Math.round((all / total) * 100)
                                     progressBar.style.width = progress + "%"
                                     progressBar.innerHTML = progress + "%"
 
                                     if (all === total) {
                                         processedDiv.innerText = `${total} contacts are processed, ${processed} congratulation
-                                    e-mails were successfully sent (sending of ${errorSendingEmail} e-mails failed).`
+                                    e-mails were successfully sent (sending of ${errorSendingEmail} e-mails failed, already sent emails ${alreadySentEmail}).`
                                         successDiv.innerText = 'All emails sent!'
                                         successDiv.style.display = 'block'
                                     }
                                 }
                             )
+                        } else {
+                            alreadySentEmail++
+                            all = processed + errorSendingEmail + alreadySentEmail
+                            processedDiv.innerText = `Processed contacts ${processed} from ${total}, error ${errorSendingEmail}, already sent ${alreadySentEmail}`
+                            const progress = Math.round((all / total) * 100)
+                            progressBar.style.width = progress + "%"
+                            progressBar.innerHTML = progress + "%"
+
+                            if (all === total) {
+                                processedDiv.innerText = `${total} contacts are processed, ${processed} congratulation
+                                    e-mails were successfully sent (sending of ${errorSendingEmail} e-mails failed, already sent emails ${alreadySentEmail}).`
+                                successDiv.innerText = 'All emails sent!'
+                                successDiv.style.display = 'block'
+                            }
                         }
                     })
                 },
