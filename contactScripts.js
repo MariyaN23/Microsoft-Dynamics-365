@@ -18,24 +18,15 @@ var contactsScript = window.Sdk || {};
             const formContext = executionContext.getFormContext()
             const firstName = formContext.getAttribute('firstname').getValue()
             const lastName = formContext.getAttribute('lastname').getValue()
-            let likelyGender
-            let genderFromProfile
-            //const usersGender = formContext.data.entity.attributes.get('gender').getValue()
-            //console.log(usersGender)
-            parent.formContext.retrieveMultipleRecords("contact", `?$select=gendercode&$filter=${filter}`).then((res) => {
-                console.log(res)
-            })
-            /* function success(result) {
-                 //result.gendercode === 1 ? genderFromProfile = 'male' : 'female'
-                 console.log(result)
-                 console.log(genderFromProfile)
-             })*/
+            let likelyGenderFromNamsor
+            let likelyGenderNumber
+            const genderFromProfile = formContext.getAttribute('gendercode').getValue()
 
             //request for likely gender
             fetch(`https://v2.namsor.com/NamSorAPIv2/api2/json/gender/${firstName}/${lastName}`, {
                 method: 'GET',
                 headers: {
-                    'X-API-KEY': '---'
+                    'X-API-KEY': '82213482b3de7e37e25daeb23cc8aafe'
                 }
             }).then(response => {
                 if (!response.ok) {
@@ -43,15 +34,19 @@ var contactsScript = window.Sdk || {};
                 }
                 return response.json()
             }).then(data => {
-                console.log(data)
-                likelyGender = data.likelyGender
+                likelyGenderFromNamsor = data.likelyGender
+                likelyGenderFromNamsor === 'male' ? likelyGenderNumber = 1 : likelyGenderNumber = 2
+
+                //change gender in profile
+                if (genderFromProfile !== likelyGenderNumber) {
+                    formContext.getAttribute('gendercode').setValue(likelyGenderNumber)
+                } else {
+                    console.log(genderFromProfile, likelyGenderNumber)
+                }
             })
                 .catch(error => {
                     console.error(`Fetch error: ${error}`)
                 })
-
-            //change gender in profile
-
         }
         this.firstNameOnChange = function (executionContext) {
             const formContext = executionContext.getFormContext()
@@ -114,18 +109,30 @@ var contactsScript = window.Sdk || {};
             const compareDate = new Date()
 
             const isEmailSentToUser = formContext.getAttribute('test_last_birthday_congrat').getValue()
-            console.log(isEmailSentToUser)
 
             if (contactBirthday.getDate() === compareDate.getDate() && contactBirthday.getMonth() === compareDate.getMonth() && !isEmailSentToUser) {
                 const myEmail = formContext.getAttribute('emailaddress1').getValue()
+                let birthdayMessageBody
+                const genderCode = formContext.getAttribute('gendercode').getValue()
+                const firstName = formContext.getAttribute('firstname').getValue()
+                const lastName = formContext.getAttribute('lastname').getValue()
+                if (genderCode === 1) {
+                    birthdayMessageBody = `Sehr geehrter Herr ${firstName} ${lastName},
+                                Ich möchte Ihnen herzlich gratulieren zu Ihrem jüngsten Erfolg.
+                                Mögen weiterhin viele positive Momente und Errungenschaften Ihren Weg kreuzen.`
+                } else if (genderCode === 2) {
+                    birthdayMessageBody = `Sehr geehrte Frau ${firstName} ${lastName},
+                                Ich möchte Ihnen herzlich zu Ihren jüngsten Erfolgen gratulieren.
+                                Mögen weiterhin viele positive Momente und Errungenschaften Ihren Weg begleiten.`
+                }
                 Email.send({
                     Host: "smtp.elasticemail.com",
                     Username: "sellaite505@gmail.com",
                     Password: "780A6E10DC3187E084E5BAFDCB85B66F2AAF",
                     To: myEmail,
                     From: "sellaite505@gmail.com",
-                    Subject: "Happy Birthday!",
-                    Body: "Happy birthday! I hope all your birthday wishes and dreams come true."
+                    Subject: "Glückwunsch!",
+                    Body: birthdayMessageBody
                 }).then(
                     message => {
                         alert(message)
